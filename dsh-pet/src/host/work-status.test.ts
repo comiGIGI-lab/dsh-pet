@@ -87,6 +87,13 @@ describe('reduceWorkStatus —— 带 turn 上下文的事件压缩', () => {
     assert.equal(reduceWorkStatus({ type: 'tool/call', data: { name: 'read' } }, { goalRound: true }), 'working');
     assert.equal(reduceWorkStatus({ type: 'tool/result', data: {} }), 'result');
   });
+
+  test('权限申请 waiting；用户确认后离开 waiting', () => {
+    assert.equal(reduceWorkStatus({ type: 'approval/asked', data: { toolName: 'pwsh' } }), 'waiting');
+    assert.equal(reduceWorkStatus({ type: 'approval/resolved' }), 'working');
+    assert.equal(reduceWorkStatus({ type: 'approval/granted' }), 'working');
+    assert.equal(reduceWorkStatus({ type: 'approval/responded' }), 'working');
+  });
 });
 
 describe('currentTaskFromTodo —— 任务详情文案（issue #59）', () => {

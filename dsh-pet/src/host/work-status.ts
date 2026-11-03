@@ -86,6 +86,13 @@ export function reduceWorkStatus(
       return 'result';
     case 'approval/asked':
       return 'waiting';
+    // 用户点了允许 / 回答了选择题：工具接着跑，不能继续挂「等确认」。
+    case 'approval/resolved':
+    case 'approval/granted':
+    case 'approval/responded':
+    case 'approval/replied':
+    case 'approval/answered':
+      return 'working';
     case 'turn/end': {
       // completed→success、错误系→error、blocked→waiting；其余（aborted 等）→null＝清该会话回空闲
       const reason = turnEndState(String(event?.data?.reason?.kind ?? ''));

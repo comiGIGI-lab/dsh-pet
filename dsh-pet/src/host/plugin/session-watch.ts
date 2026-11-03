@@ -184,7 +184,24 @@ export function registerSessionWatch(deps: SessionWatchInput): void {
           flags.goalRound = true;
           turnFlags.set(sessionId, flags);
         }
-        return; // user/message 不驱动档位动画
+        // 等确认期间用户回了话（点了权限 / 答了选择题）：离开 waiting。
+        // 还有工具在跑 → working；否则 thinking。goal 续跑消息不是「用户确认」，不走这条。
+        if (source?.kind !== 'goal' && workStatus.stateOf(sessionId) === 'waiting') {
+          const seq = Number((event as { seq?: unknown }).seq ?? 0);
+          const next = (toolsInFlight.get(sessionId)?.size ?? 0) > 0 ? 'working' : 'thinking';
+          workStatus.setState(sessionId, next, seq);
+          workStatus.setTask(sessionId, null);
+          publishWorkStatus();
+        }
+        return; // 其余 user/message 不驱动档位动画
+      }
+      if (type === 'assistant/message' && workStatus.stateOf(sessionId) === 'waiting') {
+        const seq = Number((event as { seq?: unknown }).seq ?? 0);
+        const next = (toolsInFlight.get(sessionId)?.size ?? 0) > 0 ? 'working' : 'thinking';
+        workStatus.setState(sessionId, next, seq);
+        workStatus.setTask(sessionId, null);
+        publishWorkStatus();
+        return;
       }
       if (type === 'turn/start') {
         turnFlags.set(sessionId, { goalRound: false, closing: null }); // 新一轮：清 turn 级标志
